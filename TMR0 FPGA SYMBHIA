@@ -1,0 +1,158 @@
+/*
+ * fuente.c
+ *
+ *  Created on: 19/01/2017
+ *      Author: Brian
+ */
+
+//DECLARAMOS LIBRERIAS
+#include<xgpio.h>
+#include<xparameters.h>
+#include<xtmrctr.h>
+//DEFINIMOS EL CONTADOR QUE USAREMOS COMO EL CONTADOR 0
+#define TMRCTR0 0
+//DECLARACION DE PUNTEROS Y VARIABLES
+XGpio	SW,LEDS;
+XTmrCtr	TMR0;
+u32		RESET25, RESET50, RESET75, RESET, FREQ;
+int		STATUS;//Usada para determinar si el contador ya desbordo
+
+int main()
+{
+	XGpio_Initialize(&LEDS, XPAR_LEDS_DEVICE_ID);			//INICIALIZAMOS LOS LEDS
+	XGpio_Initialize(&SW, XPAR_DIP_SWITCHES_DEVICE_ID);		//INICIALIZAMOS LOS SWITCHES
+	XTmrCtr_Initialize(&TMR0, XPAR_XPS_TIMER_0_DEVICE_ID);	//INICIALIZAMOS EL TIMER
+	while(1)//Ciclo principal
+	{
+		FREQ= (0xFE & XGpio_DiscreteRead(&SW, 1));//Obtenemos la lectura de los switches, le aplicamos una AND con 0XFE y guardamos
+		switch(FREQ)//Instruccion SWITCH
+		{
+		case 0://Caso 00
+				RESET25=0xFF4143E1;//Definimos el valor de conteo a 25mS
+				XTmrCtr_SetResetValue(&TMR0, TMRCTR0, RESET25);//Cargamos el valor de conteo al contador del timer
+				XTmrCtr_Reset(&TMR0, TMRCTR0);//Damos Reset por seguridad
+				XTmrCtr_Start(&TMR0, TMRCTR0);//Empezamos la cuenta
+				XGpio_DiscreteWrite(&LEDS, 1, 0x01);//Escribimos para saber que entramos a este caso correctamente
+				while(1)//2DO Ciclo
+				{
+					STATUS=XTmrCtr_IsExpired(&TMR0, TMRCTR0);//Preguntamos si se desbordo el contador y guarda VERDADERO o FALSO
+					if(STATUS!=FALSE)//VERDADERO, entonces ejecute la rutina
+					{
+						XTmrCtr_Stop(&TMR0, TMRCTR0);//PARAMOS contador
+						XGpio_DiscreteWrite(&LEDS, 1, 0x00);//ESCRIBIMOS EL BAJO
+						STATUS=0;//LIMPIAMOS BANDERA
+						XTmrCtr_Reset(&TMR0, TMRCTR0);//Cargamos el mismo valor (RESET25)
+						XTmrCtr_Start(&TMR0, TMRCTR0);//INICIAMOS el timer
+						while(1)//3er ciclo
+						{
+							STATUS=XTmrCtr_IsExpired(&TMR0, TMRCTR0);//Volvemos a preguntar y hasta que sea VERDADERO entramos a la rutina
+							if(STATUS!=FALSE)
+							{
+								XTmrCtr_Stop(&TMR0, TMRCTR0);//PARAMOS el timer
+								//XGpio_DiscreteWrite(&LEDS, 1, 0x00);
+								STATUS=0;//LIMPIAMOS BANDERA
+								break;//SALIMOS DEL 3ER CICLO
+							}
+						}
+						break;//SALIMOS DEL 2DO CICLO
+					}
+				}
+			break;//SALIMOS DEL CASO 00
+			//AL SALIR DEL CASO 00, VOLVEMOS A PREGUNTAR AL SW SU VALOR, Y ENTRAMOS AL QUE ESTE INDICADO.
+		case 64:
+				RESET50=0xFE8287BF;
+				XTmrCtr_SetResetValue(&TMR0, TMRCTR0, RESET50);
+				XTmrCtr_Reset(&TMR0, TMRCTR0);
+				XTmrCtr_Start(&TMR0, TMRCTR0);
+				XGpio_DiscreteWrite(&LEDS, 1, 0x02);
+				while(1)
+				{
+					STATUS=XTmrCtr_IsExpired(&TMR0, TMRCTR0);
+					if(STATUS!=FALSE)
+					{
+						XTmrCtr_Stop(&TMR0, TMRCTR0);
+						XGpio_DiscreteWrite(&LEDS, 1, 0x00);
+						STATUS=0;
+						XTmrCtr_Reset(&TMR0, TMRCTR0);
+						XTmrCtr_Start(&TMR0, TMRCTR0);
+						while(1)
+						{
+							STATUS=XTmrCtr_IsExpired(&TMR0, TMRCTR0);
+							if(STATUS!=FALSE)
+							{
+								XTmrCtr_Stop(&TMR0, TMRCTR0);
+								//XGpio_DiscreteWrite(&LEDS, 1, 0x00);
+								STATUS=0;
+								break;
+							}
+						}
+						break;
+					}
+				}
+			break;
+		case 128:
+			RESET75=0xFDC3CBA1;
+			XTmrCtr_SetResetValue(&TMR0, TMRCTR0, RESET75);
+			XTmrCtr_Reset(&TMR0, TMRCTR0);
+			XTmrCtr_Start(&TMR0, TMRCTR0);
+			XGpio_DiscreteWrite(&LEDS, 1, 0x03);
+			while(1)
+			{
+			STATUS=XTmrCtr_IsExpired(&TMR0, TMRCTR0);
+				if(STATUS!=FALSE)
+					{
+						XTmrCtr_Stop(&TMR0, TMRCTR0);
+						XGpio_DiscreteWrite(&LEDS, 1, 0x00);
+						STATUS=0;
+						XTmrCtr_Reset(&TMR0, TMRCTR0);
+						XTmrCtr_Start(&TMR0, TMRCTR0);
+						while(1)
+						{
+							STATUS=XTmrCtr_IsExpired(&TMR0, TMRCTR0);
+							if(STATUS!=FALSE)
+							{
+								XTmrCtr_Stop(&TMR0, TMRCTR0);
+								//XGpio_DiscreteWrite(&LEDS, 1, 0x00);
+								STATUS=0;
+								break;
+							}
+						}
+						break;
+					}
+			}
+			break;
+		case 192:
+			RESET=0xFD050F81;
+			XTmrCtr_SetResetValue(&TMR0, TMRCTR0, RESET);
+			XTmrCtr_Reset(&TMR0, TMRCTR0);
+			XTmrCtr_Start(&TMR0, TMRCTR0);
+			XGpio_DiscreteWrite(&LEDS, 1, 0x04);
+			while(1)
+			{
+				STATUS=XTmrCtr_IsExpired(&TMR0, TMRCTR0);
+					if(STATUS!=FALSE)
+					{
+						XTmrCtr_Stop(&TMR0, TMRCTR0);
+						XGpio_DiscreteWrite(&LEDS, 1, 0x00);
+						STATUS=0;
+						XTmrCtr_Reset(&TMR0, TMRCTR0);
+						XTmrCtr_Start(&TMR0, TMRCTR0);
+						while(1)
+						{
+							STATUS=XTmrCtr_IsExpired(&TMR0, TMRCTR0);
+							if(STATUS!=FALSE)
+							{
+								XTmrCtr_Stop(&TMR0, TMRCTR0);
+								//XGpio_DiscreteWrite(&LEDS, 1, 0x00);
+								STATUS=0;
+								break;
+							}
+						}
+						break;
+					}
+			}
+			break;
+		}
+	}
+}
+
